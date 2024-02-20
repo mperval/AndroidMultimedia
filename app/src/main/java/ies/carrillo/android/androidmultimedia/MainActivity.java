@@ -66,7 +66,8 @@ public class MainActivity extends AppCompatActivity {
             playSong(songs.get(globalPosition));
 
         });
-
+        //BOTONES
+        
         btnNext.setOnClickListener(v ->{
             AssetFileDescriptor descriptor = null;
 
@@ -80,34 +81,39 @@ public class MainActivity extends AppCompatActivity {
         });
 
         btnPlay.setOnClickListener(v -> {
-            if(isPaused){
+            if (isPaused && mediaPlayer != null) {
                 btnPlay.setImageResource(R.drawable.ic_play);
-                if(songs.size() > 0){
+                if (songs.size() > 0) {
                     isPaused = false;
-                    playSong(songs.get(globalPosition));
+                    mediaPlayer.start();
                 }
-            }else{
-                isPaused = true;
-                mediaPlayer.pause();
-                btnPlay.setImageResource(R.drawable.ic_pause);
-
+            } else {
+                if (mediaPlayer == null && songs.size() > 0) {
+                    isPaused = false;
+                    globalPosition = 0;
+                    playSong(songs.get(globalPosition));
+                } else {
+                    isPaused = true;
+                    if (mediaPlayer != null) {
+                        mediaPlayer.pause();
+                    }
+                    btnPlay.setImageResource(R.drawable.ic_pause);
+                }
             }
-
-
         });
         btnPrevius.setOnClickListener(v -> {
             globalPosition -= 1;
-
-            if(songs.size() > 0 && globalPosition < songs.size()){
-                playSong(songs.get(globalPosition));
-            }
-        });
-        btnStop.setOnClickListener(v -> {
-            if(mediaPlayer != null){
-                mediaPlayer.reset();
-                globalPosition = 0;
+            if (globalPosition < 0) {
+                globalPosition = songs.size() - 1;
             }
             playSong(songs.get(globalPosition));
+        });
+
+        btnStop.setOnClickListener(v -> {
+            if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+                mediaPlayer.pause();
+                btnPlay.setImageResource(R.drawable.ic_play);
+            }
         });
     }
     public void loadComponents(){
