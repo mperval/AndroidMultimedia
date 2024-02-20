@@ -2,6 +2,7 @@ package ies.carrillo.android.androidmultimedia;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.res.AssetFileDescriptor;
 import android.content.res.AssetManager;
 import android.media.MediaPlayer;
 import android.os.Bundle;
@@ -23,6 +24,8 @@ public class MainActivity extends AppCompatActivity {
     private List<Song> songs;
     private AssetManager assetManager;
     private MediaPlayer mediaPlayer;
+    private int globalPosition = 0;
+    private boolean isPaused;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,6 +56,59 @@ public class MainActivity extends AppCompatActivity {
 
         songAdapter = new SongAdapter(this, songs);
         lvSongs.setAdapter(songAdapter);
+
+        lvSongs.setOnItemClickListener((parent, view, position, id) ->{
+            isPaused = false;
+            globalPosition = position;//para el boton de siguiente.
+
+            btnPlay.setImageResource(R.drawable.ic_pause);
+
+            playSong(songs.get(globalPosition));
+
+        });
+
+        btnNext.setOnClickListener(v ->{
+            AssetFileDescriptor descriptor = null;
+
+                if(btnNext.isPressed()){
+                    globalPosition += 1;
+                }
+                if(globalPosition == songs.size()){
+                    globalPosition = 0;
+                }
+                playSong(songs.get(globalPosition));
+        });
+
+        btnPlay.setOnClickListener(v -> {
+            if(isPaused){
+                btnPlay.setImageResource(R.drawable.ic_play);
+                if(songs.size() > 0){
+                    isPaused = false;
+                    playSong(songs.get(globalPosition));
+                }
+            }else{
+                isPaused = true;
+                mediaPlayer.pause();
+                btnPlay.setImageResource(R.drawable.ic_pause);
+
+            }
+
+
+        });
+        btnPrevius.setOnClickListener(v -> {
+            globalPosition -= 1;
+
+            if(songs.size() > 0 && globalPosition < songs.size()){
+                playSong(songs.get(globalPosition));
+            }
+        });
+        btnStop.setOnClickListener(v -> {
+            if(mediaPlayer != null){
+                mediaPlayer.reset();
+                globalPosition = 0;
+            }
+            playSong(songs.get(globalPosition));
+        });
     }
     public void loadComponents(){
         lvSongs = findViewById(R.id.lvSongs);
@@ -60,6 +116,29 @@ public class MainActivity extends AppCompatActivity {
         btnStop = findViewById(R.id.btnStop);
         btnPlay = findViewById(R.id.btnPlay);
         btnPrevius = findViewById(R.id.btnPrevius);
+        isPaused = true;
         songs = new ArrayList<>();
+    }
+    public void playSong(Song song){
+        AssetFileDescriptor descriptor = null;
+        try {
+            song = songs.get(globalPosition);
+
+            String filename = song.getArtist() + "-" + song.getTitle();
+            descriptor = assetManager.openFd(filename);
+            if(mediaPlayer != null){
+                mediaPlayer.reset();
+            }
+            //Param1: nombre del archivo
+            //Param2: momento del inicio
+            //Param3: longitud del archivo
+            mediaPlayer = new MediaPlayer();
+            mediaPlayer.setDataSource(descriptor.getFileDescriptor(), descriptor.getStartOffset(), descriptor.getLength());
+            mediaPlayer.prepare();
+            mediaPlayer.start();
+
+        }catch(Exception e){
+            Log.e("Error reproductor", e.getMessage());
+        }
     }
 }
